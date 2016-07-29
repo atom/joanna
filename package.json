@@ -1,0 +1,20 @@
+{
+  "name": "joanna",
+  "version": "0.0.1",
+  "description": "JavaScript API Docs, compatible with donna",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "mocha test"
+  },
+  "author": "Max Brunsfeld",
+  "license": "MIT",
+  "dependencies": {
+    "babylon": "^6.8.4"
+  },
+  "devDependencies": {
+    "coffee-script": "^1.10.0",
+    "dedent": "^0.6.0",
+    "donna": "^1.0.13",
+    "mocha": "^2.5.3"
+  }
+}
