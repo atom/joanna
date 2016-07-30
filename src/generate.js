@@ -49,22 +49,27 @@ class Generator {
       prototypeProperties: [],
       doc: undefined
     }))
-
     this.visitNodeWithChildren(node)
-
     this.classStack.pop()
   }
 
   visitMethodDefinition (node) {
-    const method = this.addObject(node, {
+    const currentClass = top(this.classStack)
+    const currentMethod = this.addObject(node, {
       type: 'function',
       name: node.key.name,
       doc: undefined,
-      bindingType: 'prototypeProperty',
+      bindingType: node.static ? 'classProperty' : 'prototypeProperty',
       paramNames: node.params.map(paramNode => paramNode.name)
     })
 
-    top(this.classStack).prototypeProperties.push(method.range[0])
+    if (node.static) {
+      currentMethod.bindingType = 'classProperty'
+      currentClass.classProperties.push(currentMethod.range[0])
+    } else {
+      currentMethod.bindingType = 'prototypeProperty'
+      currentClass.prototypeProperties.push(currentMethod.range[0])
+    }
   }
 
   visitNodeWithChildren (node) {

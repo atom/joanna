@@ -1,9 +1,9 @@
 'use strict'
 
-const dedent = require('dedent')
 const CoffeeScript = require('coffee-script')
 CoffeeScript.register()
 const donna = require('donna')
+const dedent = require('dedent')
 const assert = require('chai').assert
 const generate = require('../src/generate')
 
@@ -11,13 +11,13 @@ describe('generate(code)', function () {
   it('handles top-level functions', function () {
     const donnaResult = runDonna('test.coffee', dedent`
       # A useful function
-      exports.hello = ->
+      exports.hello = (one, two) ->
         console.log("hello!")
     `)
 
     const result = generate('test.js', dedent`
       // A useful function
-      export function hello () {
+      export function hello (one, two) {
         console.log("hello!")
       }
     `)
@@ -83,6 +83,31 @@ describe('generate(code)', function () {
       bindingType: 'prototypeProperty',
       paramNames: []
     })
+  })
+
+  it('handles static methods', function () {
+    const donnaResult = runDonna('test.coffee', dedent`
+      # A useful class
+      class Thing
+
+        # A useful factory function
+        @build: (id) ->
+          new Thing(id)
+    `)
+
+    const result = generate('test.js', dedent`
+      // A useful class
+      class Thing {
+
+        // A useful factory function
+        static build (id) {
+          return new Thing(id)
+        }
+      }
+    `)
+
+    assertEquivalentMetadata(result, donnaResult, [1, 0], [1, 0])
+    assertEquivalentMetadata(result, donnaResult, [4, 2], [4, 10])
   })
 })
 
