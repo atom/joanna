@@ -139,6 +139,8 @@ function assertEquivalentMetadata (actualObjects, expectedObjects, actualPositio
         let actualElement = actual[i]
         if (isPosition(expectedElement)) {
           assertMatch(actualElement, expectedElement, keyPath.concat([i]))
+        } else {
+          assert.equal(actualElement, expectedElement, "Key path: " + keyPath.join('.') + i)
         }
       }
     } else {
