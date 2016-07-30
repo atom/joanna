@@ -7,6 +7,8 @@ module.exports = function generate (filename, code) {
   return new Generator(filename, code).generate()
 }
 
+const BABYLON_OPTIONS = {sourceType: 'module'}
+
 class Generator {
   constructor (filename, code) {
     this.filename = filename
@@ -16,16 +18,25 @@ class Generator {
   generate () {
     this.result = {}
     this.classStack = []
-    this.visit(babylon.parse(this.code))
+    this.visit(babylon.parse(this.code, BABYLON_OPTIONS))
     return this.result
   }
 
   visit (node) {
     switch (node.type) {
+      case 'FunctionDeclaration': return this.visitFunctionDeclaration(node)
       case 'ClassDeclaration': return this.visitClassDeclaration(node)
       case 'ClassMethod': return this.visitMethodDefinition(node)
       default:                 return this.visitNodeWithChildren(node)
     }
+  }
+
+  visitFunctionDeclaration (node) {
+    this.addObject(node, {
+      type: 'function',
+      name: node.id.name,
+      bindingType: 'exportsProperty',
+    })
   }
 
   visitClassDeclaration (node) {
@@ -48,6 +59,7 @@ class Generator {
     const method = this.addObject(node, {
       type: 'function',
       name: node.key.name,
+      doc: undefined,
       bindingType: 'prototypeProperty',
       paramNames: node.params.map(paramNode => paramNode.name)
     })
