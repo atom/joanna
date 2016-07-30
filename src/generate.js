@@ -47,7 +47,7 @@ class Generator {
       bindingType: undefined,
       classProperties: [],
       prototypeProperties: [],
-      doc: undefined
+      doc: this.getDocumentation(node)
     }))
     this.visitNodeWithChildren(node)
     this.classStack.pop()
@@ -58,7 +58,7 @@ class Generator {
     const currentMethod = this.addObject(node, {
       type: 'function',
       name: node.key.name,
-      doc: undefined,
+      doc: this.getDocumentation(node),
       bindingType: node.static ? 'classProperty' : 'prototypeProperty',
       paramNames: node.params.map(paramNode => paramNode.name)
     })
@@ -84,6 +84,13 @@ class Generator {
       } else if (value && typeof value.type === 'string') {
         this.visit(value)
       }
+    }
+  }
+
+  getDocumentation (node) {
+    if (node.leadingComments) {
+      const lines = node.leadingComments.map(commentNode => commentNode.value)
+      return 'Private:' + lines.join('\n') + ' '
     }
   }
 
