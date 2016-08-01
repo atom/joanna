@@ -7,13 +7,10 @@ const SOURCE_PATHS = new Set(['src', 'lib', 'app'])
 const NON_SOURCE_PATHS = new Set(['node_modules', '.git'])
 
 module.exports = function findSources (rootPath) {
-  return walkdir.sync(rootPath).filter(filepath => {
-    if (!filepath.endsWith('.js')) {
-      return false
-    }
-
-    if (!fs.statSync(filepath).isFile()) {
-      return false
+  const result = []
+  for (let filepath of walkdir.sync(rootPath)) {
+    if (!filepath.endsWith('.js') || !fs.statSync(filepath).isFile()) {
+      continue
     }
 
     const segments = filepath.split(path.sep)
@@ -21,12 +18,17 @@ module.exports = function findSources (rootPath) {
     let isSource = false
     for (let segment of segments) {
       if (NON_SOURCE_PATHS.has(segment)) {
-        return false
+        isSource = false
+        break
       } else if (SOURCE_PATHS.has(segment)) {
         isSource = true
       }
     }
 
-    return isSource
-  })
+    if (isSource) {
+      result.push(filepath)
+    }
+  }
+
+  return result
 }
