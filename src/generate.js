@@ -27,6 +27,7 @@ class Generator {
 
   visit (node) {
     switch (node.type) {
+      case 'ExportNamedDeclaration': return this.visitExportNamedDeclaration(node)
       case 'AssignmentExpression': return this.visitAssignmentExpression(node)
       case 'FunctionDeclaration': return this.visitFunctionDeclaration(node)
       case 'FunctionExpression': return this.visitFunctionDeclaration(node)
@@ -34,6 +35,17 @@ class Generator {
       case 'ClassMethod': return this.visitMethodDefinition(node)
       default: return this.visitNodeWithChildren(node)
     }
+  }
+
+  visitExportNamedDeclaration (node) {
+    const declaredObject = this.visit(node.declaration)
+    this.expandObject(declaredObject, node.loc)
+    declaredObject.bindingType = 'exportsProperty'
+    this.exports[declaredObject.name] = declaredObject.range[0][0]
+
+    // Match donna's more minimal format for exported functions
+    delete declaredObject.doc
+    delete declaredObject.paramNames
   }
 
   visitAssignmentExpression (node) {
@@ -45,14 +57,13 @@ class Generator {
           case 'module':
             const rightObject = this.visit(node.right)
             if (rightObject) {
-              delete this.objects[rightObject.range[0][0]][rightObject.range[0][1]]
-              rightObject.range = this.getRange(node.loc)
+              this.expandObject(rightObject, node.loc)
               rightObject.bindingType = 'exportsProperty'
-              this.objects[rightObject.range[0][0]][rightObject.range[0][1]] = rightObject
+              this.exports[rightObject.name] = rightObject.range[0][0]
+
+              // Match donna's more minimal format for exported functions
               delete rightObject.doc
               delete rightObject.paramNames
-
-              this.exports[rightObject.name] = rightObject.range[0][0]
             }
         }
       }
@@ -149,6 +160,12 @@ class Generator {
     }
 
     return ensureAPIStatusTag(lastComment.value)
+  }
+
+  expandObject (object, newLocation) {
+    delete this.objects[object.range[0][0]][object.range[0][1]]
+    object.range = this.getRange(newLocation)
+    this.objects[object.range[0][0]][object.range[0][1]] = object
   }
 
   addObject (location, object) {

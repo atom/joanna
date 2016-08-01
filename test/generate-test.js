@@ -142,15 +142,24 @@ describe('generate(code)', function () {
         console.log("hello!")
     `)
 
-    const result = generate(dedent`
+    const es6Result = generate(dedent`
       // A useful function
       exports.hello = function hello (one, two) {
         console.log("hello!")
       }
     `)
 
-    assertMatchingObjects(result, donnaResult, [1, 0], [1, 0])
-    assert.equal(result.exports.hello, 1)
+    const es7Result = generate(dedent`
+      // A useful function
+      export function hello (one, two) {
+        console.log("hello!")
+      }
+    `)
+
+    assertMatchingObjects(es6Result, donnaResult, [1, 0], [1, 0])
+    assertMatchingObjects(es7Result, donnaResult, [1, 0], [1, 0])
+    assert.equal(es6Result.exports.hello, 1)
+    assert.equal(es7Result.exports.hello, 1)
     assert.equal(donnaResult.exports.hello, 1)
   })
 
