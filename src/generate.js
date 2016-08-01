@@ -27,10 +27,35 @@ class Generator {
 
   visit (node) {
     switch (node.type) {
+      case 'AssignmentExpression': return this.visitAssignmentExpression(node)
       case 'FunctionDeclaration': return this.visitFunctionDeclaration(node)
+      case 'FunctionExpression': return this.visitFunctionDeclaration(node)
       case 'ClassDeclaration': return this.visitClassDeclaration(node)
       case 'ClassMethod': return this.visitMethodDefinition(node)
       default: return this.visitNodeWithChildren(node)
+    }
+  }
+
+  visitAssignmentExpression (node) {
+    const left = node.left
+    if (left.type === 'MemberExpression') {
+      if (left.object.type === 'Identifier') {
+        switch (left.object.name) {
+          case 'exports':
+          case 'module':
+            const rightObject = this.visit(node.right)
+            if (rightObject) {
+              delete this.objects[rightObject.range[0][0]][rightObject.range[0][1]]
+              rightObject.range = this.getRange(node.loc)
+              rightObject.bindingType = 'exportsProperty'
+              this.objects[rightObject.range[0][0]][rightObject.range[0][1]] = rightObject
+              delete rightObject.doc
+              delete rightObject.paramNames
+
+              this.exports[rightObject.name] = rightObject.range[0][0]
+            }
+        }
+      }
     }
   }
 
@@ -45,7 +70,7 @@ class Generator {
       doc: this.getDocumentation(node)
     }))
     this.visitNodeWithChildren(node)
-    this.classStack.pop()
+    return this.classStack.pop()
   }
 
   visitMethodDefinition (node) {
@@ -65,13 +90,17 @@ class Generator {
       currentMethod.bindingType = 'prototypeProperty'
       currentClass.prototypeProperties.push(currentMethod.range[0])
     }
+
+    return currentMethod
   }
 
   visitFunctionDeclaration (node) {
-    this.addObject(node.loc, {
+    return this.addObject(node.loc, {
       type: 'function',
       name: node.id.name,
-      bindingType: 'exportsProperty'
+      doc: this.getDocumentation(node),
+      paramNames: node.params.map(paramNode => paramNode.name),
+      bindingType: 'variable'
     })
   }
 
@@ -123,16 +152,19 @@ class Generator {
   }
 
   addObject (location, object) {
+    const range = this.getRange(location)
+    if (!this.objects[range[0][0]]) {
+      this.objects[range[0][0]] = {}
+    }
+    return (this.objects[range[0][0]][range[0][1]] = Object.assign(object, {range: range}))
+  }
+
+  getRange (location) {
     const line = location.start.line - 1
     const column = location.start.column
     const endLine = location.end.line - 1
     const endColumn = location.end.column
-    if (!this.objects[line]) {
-      this.objects[line] = {}
-    }
-    return (this.objects[line][column] = Object.assign(object, {
-      range: [[line, column], [endLine, endColumn]]
-    }))
+    return [[line, column], [endLine, endColumn]]
   }
 }
 

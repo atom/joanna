@@ -121,18 +121,37 @@ describe('generate(code)', function () {
   it('handles top-level functions', function () {
     const donnaResult = runDonna(dedent`
       # A useful function
+      hello = (one, two) ->
+        console.log("hello!")
+    `)
+
+    const result = generate(dedent`
+      // A useful function
+      function hello (one, two) {
+        console.log("hello!")
+      }
+    `)
+
+    assertMatchingObjects(result, donnaResult, [1, 0], [1, 8])
+  })
+
+  it('handles exported functions', function () {
+    const donnaResult = runDonna(dedent`
+      # A useful function
       exports.hello = (one, two) ->
         console.log("hello!")
     `)
 
     const result = generate(dedent`
       // A useful function
-      export function hello (one, two) {
+      exports.hello = function hello (one, two) {
         console.log("hello!")
       }
     `)
 
-    assertMatchingObjects(result, donnaResult, [1, 7], [1, 0])
+    assertMatchingObjects(result, donnaResult, [1, 0], [1, 0])
+    assert.equal(result.exports.hello, 1)
+    assert.equal(donnaResult.exports.hello, 1)
   })
 
   it('handles static methods', function () {
