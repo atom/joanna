@@ -9,7 +9,7 @@ const generate = require('../src/generate')
 
 describe('generate(code)', function () {
   it('handles classes', function () {
-    const donnaResult = runDonna('test.coffee', dedent`
+    const donnaResult = runDonna(dedent`
       # A person class
       class Person extends Animal
         constructor: (name, age) ->
@@ -20,7 +20,7 @@ describe('generate(code)', function () {
         getName: -> @name
     `)
 
-    const result = generate('test.js', dedent`
+    const result = generate(dedent`
       // A person class
       class Person extends Animal {
         constructor (name, age) {
@@ -35,9 +35,9 @@ describe('generate(code)', function () {
       }
     `)
 
-    assertEquivalentMetadata(result, donnaResult, [1, 0], [1, 0])
+    assertMatchingObjects(result, donnaResult, [1, 0], [1, 0])
 
-    assert.deepEqual(result['1']['0'], {
+    assert.deepEqual(result.objects['1']['0'], {
       type: 'class',
       name: 'Person',
       superClass: 'Animal',
@@ -51,7 +51,7 @@ describe('generate(code)', function () {
       ]
     })
 
-    assert.deepEqual(result['2']['2'], {
+    assert.deepEqual(result.objects['2']['2'], {
       type: 'function',
       name: 'constructor',
       doc: undefined,
@@ -60,7 +60,7 @@ describe('generate(code)', function () {
       paramNames: ['name', 'age']
     })
 
-    assert.deepEqual(result['8']['2'], {
+    assert.deepEqual(result.objects['8']['2'], {
       type: 'function',
       name: 'getName',
       doc: 'Private: Get the name',
@@ -71,7 +71,7 @@ describe('generate(code)', function () {
   })
 
   it('handles section divider comments', function () {
-    const donnaResult = runDonna('test.coffee', dedent`
+    const donnaResult = runDonna(dedent`
       # A useful class
       class Person
         constructor: (name) ->
@@ -91,7 +91,7 @@ describe('generate(code)', function () {
         getName: -> @name
     `)
 
-    const result = generate('test.js', dedent`
+    const result = generate(dedent`
       // A useful class
       class Person {
         constructor (name) {
@@ -113,30 +113,30 @@ describe('generate(code)', function () {
       }
     `)
 
-    assertEquivalentMetadata(result, donnaResult, [1, 0], [1, 0])
-    assertEquivalentMetadata(result, donnaResult, [6, 2], [5, 2])
-    assertEquivalentMetadata(result, donnaResult, [10, 2], [9, 2])
+    assertMatchingObjects(result, donnaResult, [1, 0], [1, 0])
+    assertMatchingObjects(result, donnaResult, [6, 2], [5, 2])
+    assertMatchingObjects(result, donnaResult, [10, 2], [9, 2])
   })
 
   it('handles top-level functions', function () {
-    const donnaResult = runDonna('test.coffee', dedent`
+    const donnaResult = runDonna(dedent`
       # A useful function
       exports.hello = (one, two) ->
         console.log("hello!")
     `)
 
-    const result = generate('test.js', dedent`
+    const result = generate(dedent`
       // A useful function
       export function hello (one, two) {
         console.log("hello!")
       }
     `)
 
-    assertEquivalentMetadata(result, donnaResult, [1, 7], [1, 0])
+    assertMatchingObjects(result, donnaResult, [1, 7], [1, 0])
   })
 
   it('handles static methods', function () {
-    const donnaResult = runDonna('test.coffee', dedent`
+    const donnaResult = runDonna(dedent`
       # A useful class
       class Thing
 
@@ -145,7 +145,7 @@ describe('generate(code)', function () {
           new Thing(id)
     `)
 
-    const result = generate('test.js', dedent`
+    const result = generate(dedent`
       // A useful class
       class Thing {
 
@@ -156,12 +156,15 @@ describe('generate(code)', function () {
       }
     `)
 
-    assertEquivalentMetadata(result, donnaResult, [1, 0], [1, 0])
-    assertEquivalentMetadata(result, donnaResult, [4, 2], [4, 10])
+    assertMatchingObjects(result, donnaResult, [1, 0], [1, 0])
+    assertMatchingObjects(result, donnaResult, [4, 2], [4, 10])
   })
 })
 
-function assertEquivalentMetadata (actualObjects, expectedObjects, actualPosition, expectedPosition) {
+function assertMatchingObjects (actualMetadata, expectedMetadata, actualPosition, expectedPosition) {
+  const actualObjects = actualMetadata.objects
+  const expectedObjects = expectedMetadata.objects
+
   assertMatchingObject(actualPosition, expectedPosition, [])
 
   function assertMatchingObject (actualPos, expectedPos, keyPath) {
@@ -212,12 +215,13 @@ function isPosition (value) {
     typeof value[1] === 'number'
 }
 
-function runDonna (filename, content) {
+function runDonna (content) {
+  const filename = 'test.coffee'
   const parser = new donna.Parser()
   parser.parseContent(content, filename)
   const metadata = new donna.Metadata({}, parser)
   const slug = {files: {}}
   metadata.generate(CoffeeScript.nodes(content))
   donna.populateSlug(slug, filename, metadata)
-  return slug.files[filename].objects
+  return slug.files[filename]
 }

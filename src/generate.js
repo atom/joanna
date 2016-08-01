@@ -2,24 +2,27 @@
 
 const babylon = require('babylon')
 
-module.exports = function generate (filename, code) {
-  return new Generator(filename, code).generate()
+module.exports = function generate (code) {
+  return new Generator(code).generate()
 }
 
 const BABYLON_OPTIONS = {sourceType: 'module'}
 const API_STATUS_REGEX = /^(Private|Essential|Extended|Section):/
 
 class Generator {
-  constructor (filename, code) {
-    this.filename = filename
+  constructor (code) {
     this.code = code
   }
 
   generate () {
-    this.result = {}
+    this.objects = {}
+    this.exports = {}
     this.classStack = []
     this.visit(babylon.parse(this.code, BABYLON_OPTIONS))
-    return this.result
+    return {
+      objects: this.objects,
+      exports: this.exports
+    }
   }
 
   visit (node) {
@@ -124,10 +127,10 @@ class Generator {
     const column = location.start.column
     const endLine = location.end.line - 1
     const endColumn = location.end.column
-    if (!this.result[line]) {
-      this.result[line] = {}
+    if (!this.objects[line]) {
+      this.objects[line] = {}
     }
-    return (this.result[line][column] = Object.assign(object, {
+    return (this.objects[line][column] = Object.assign(object, {
       range: [[line, column], [endLine, endColumn]]
     }))
   }
