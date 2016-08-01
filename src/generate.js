@@ -31,14 +31,6 @@ class Generator {
     }
   }
 
-  visitFunctionDeclaration (node) {
-    this.addObject(node.loc, {
-      type: 'function',
-      name: node.id.name,
-      bindingType: 'exportsProperty'
-    })
-  }
-
   visitClassDeclaration (node) {
     this.classStack.push(this.addObject(node.loc, {
       type: 'class',
@@ -70,6 +62,14 @@ class Generator {
       currentMethod.bindingType = 'prototypeProperty'
       currentClass.prototypeProperties.push(currentMethod.range[0])
     }
+  }
+
+  visitFunctionDeclaration (node) {
+    this.addObject(node.loc, {
+      type: 'function',
+      name: node.id.name,
+      bindingType: 'exportsProperty'
+    })
   }
 
   visitNodeWithChildren (node) {
