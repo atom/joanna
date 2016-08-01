@@ -216,6 +216,51 @@ describe('generate(code)', function () {
     assertMatchingObjects(result, donnaResult, [1, 0], [1, 0])
     assertMatchingObjects(result, donnaResult, [4, 2], [4, 10])
   })
+
+  it('handles the various visibility levels of APIs', function () {
+    const donnaResult = runDonna(dedent`
+      # Public: a thing
+      class Thing
+
+        # a
+        a: -> 'a'
+
+        # Private: b
+        b: -> 'b'
+
+        # Public: c
+        c: -> 'c'
+
+        # Essential: d
+        d: -> 'd'
+
+        # Extended: e
+        e: -> 'e'
+    `)
+
+    const result = generate(dedent`
+      // Public: a thing
+      class Thing {
+
+        // a
+        a () { return 'a' }
+
+        // Private: b
+        b () { return 'b' }
+
+        // Public: c
+        c () { return 'c' }
+
+        // Essential: d
+        d () { return 'd' }
+
+        // Extended: e
+        e () { return 'e' }
+      }
+    `)
+
+    assertMatchingObjects(result, donnaResult, [1, 0], [1, 0])
+  })
 })
 
 function assertMatchingObjects (actualMetadata, expectedMetadata, actualPosition, expectedPosition) {

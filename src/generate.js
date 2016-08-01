@@ -11,7 +11,7 @@ const BABYLON_OPTIONS = {
   plugins: ['asyncFunctions', 'jsx']
 }
 
-const API_STATUS_REGEX = /^(Private|Essential|Extended|Section):/
+const API_STATUS_REGEX = /^(Private|Public|Essential|Extended|Section):/
 
 class Generator {
   constructor (code) {
