@@ -1,2 +1,6 @@
-test
-src
+spec
+script
+.npmignore
+.DS_Store
+npm-debug.log
+.travis.yml
