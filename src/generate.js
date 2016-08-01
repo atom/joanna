@@ -51,9 +51,11 @@ class Generator {
 
   visitExportDefaultDeclaration (node) {
     const declaredObject = this.visit(node.declaration)
-    declaredObject.bindingType = 'exports'
-    declaredObject.doc = this.getDocumentation()
-    this.exports = declaredObject.range[0][0]
+    if (declaredObject) {
+      declaredObject.bindingType = 'exports'
+      declaredObject.doc = this.getDocumentation()
+      this.exports = declaredObject.range[0][0]
+    }
   }
 
   visitExportNamedDeclaration (node) {
@@ -138,7 +140,7 @@ class Generator {
   visitFunctionDeclaration (node) {
     return this.addObject(node.loc, {
       type: 'function',
-      name: node.id.name,
+      name: node.id && node.id.name,
       doc: this.getDocumentation(),
       paramNames: node.params.map(paramNode => paramNode.name),
       bindingType: 'variable'
