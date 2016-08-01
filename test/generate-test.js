@@ -17,7 +17,8 @@ describe('generate(code)', function () {
           @age = age
 
         # Get the name
-        getName: -> @name
+        getName: ->
+          Promise.resolve(@name)
     `)
 
     const result = generate(dedent`
@@ -29,7 +30,7 @@ describe('generate(code)', function () {
         }
 
         // Get the name
-        getName () {
+        async getName () {
           return this.name
         }
       }
@@ -198,7 +199,7 @@ describe('generate(code)', function () {
 
         # A useful factory function
         @build: (id) ->
-          new Thing(id)
+          return new Thing(id)
     `)
 
     const result = generate(dedent`

@@ -6,7 +6,11 @@ module.exports = function generate (code) {
   return new Generator(code).generate()
 }
 
-const BABYLON_OPTIONS = {sourceType: 'module'}
+const BABYLON_OPTIONS = {
+  sourceType: 'module',
+  plugins: ['asyncFunctions', 'jsx']
+}
+
 const API_STATUS_REGEX = /^(Private|Essential|Extended|Section):/
 
 class Generator {
