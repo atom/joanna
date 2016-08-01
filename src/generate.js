@@ -18,6 +18,7 @@ class Generator {
     this.objects = {}
     this.exports = {}
     this.classStack = []
+    this.nodeStack = []
     this.visit(babylon.parse(this.code, BABYLON_OPTIONS))
     return {
       objects: this.objects,
@@ -26,15 +27,29 @@ class Generator {
   }
 
   visit (node) {
-    switch (node.type) {
-      case 'ExportNamedDeclaration': return this.visitExportNamedDeclaration(node)
-      case 'AssignmentExpression': return this.visitAssignmentExpression(node)
-      case 'FunctionDeclaration': return this.visitFunctionDeclaration(node)
-      case 'FunctionExpression': return this.visitFunctionDeclaration(node)
-      case 'ClassDeclaration': return this.visitClassDeclaration(node)
-      case 'ClassMethod': return this.visitMethodDefinition(node)
-      default: return this.visitNodeWithChildren(node)
+    this.nodeStack.push(node)
+    try {
+      switch (node.type) {
+        case 'ExportDefaultDeclaration': return this.visitExportDefaultDeclaration(node)
+        case 'ExportNamedDeclaration': return this.visitExportNamedDeclaration(node)
+        case 'AssignmentExpression': return this.visitAssignmentExpression(node)
+        case 'FunctionDeclaration': return this.visitFunctionDeclaration(node)
+        case 'FunctionExpression': return this.visitFunctionDeclaration(node)
+        case 'ClassDeclaration': return this.visitClassDeclaration(node)
+        case 'ClassExpression': return this.visitClassDeclaration(node)
+        case 'ClassMethod': return this.visitMethodDefinition(node)
+        default: return this.visitNodeWithChildren(node)
+      }
+    } finally {
+      this.nodeStack.pop()
     }
+  }
+
+  visitExportDefaultDeclaration (node) {
+    const declaredObject = this.visit(node.declaration)
+    declaredObject.bindingType = 'exports'
+    declaredObject.doc = this.getDocumentation()
+    this.exports = declaredObject.range[0][0]
   }
 
   visitExportNamedDeclaration (node) {
@@ -53,8 +68,7 @@ class Generator {
     if (left.type === 'MemberExpression') {
       if (left.object.type === 'Identifier') {
         switch (left.object.name) {
-          case 'exports':
-          case 'module':
+          case 'exports': {
             const rightObject = this.visit(node.right)
             if (rightObject) {
               this.expandObject(rightObject, node.loc)
@@ -65,6 +79,18 @@ class Generator {
               delete rightObject.doc
               delete rightObject.paramNames
             }
+            break
+          }
+
+          case 'module': {
+            const rightObject = this.visit(node.right)
+            if (rightObject) {
+              rightObject.bindingType = 'exports'
+              rightObject.doc = this.getDocumentation()
+              this.exports = rightObject.range[0][0]
+            }
+            break
+          }
         }
       }
     }
@@ -78,7 +104,7 @@ class Generator {
       bindingType: undefined,
       classProperties: [],
       prototypeProperties: [],
-      doc: this.getDocumentation(node)
+      doc: this.getDocumentation()
     }))
     this.visitNodeWithChildren(node)
     return this.classStack.pop()
@@ -89,7 +115,7 @@ class Generator {
     const currentMethod = this.addObject(node.loc, {
       type: 'function',
       name: node.key.name,
-      doc: this.getDocumentation(node),
+      doc: this.getDocumentation(),
       bindingType: node.static ? 'classProperty' : 'prototypeProperty',
       paramNames: node.params.map(paramNode => paramNode.name)
     })
@@ -109,7 +135,7 @@ class Generator {
     return this.addObject(node.loc, {
       type: 'function',
       name: node.id.name,
-      doc: this.getDocumentation(node),
+      doc: this.getDocumentation(),
       paramNames: node.params.map(paramNode => paramNode.name),
       bindingType: 'variable'
     })
@@ -130,14 +156,15 @@ class Generator {
     }
   }
 
-  getDocumentation (node) {
-    if (!node.leadingComments) {
+  getDocumentation () {
+    const leadingComments = this.getLeadingComments()
+    if (!leadingComments) {
       return
     }
 
     let lastComment = null
     let groupedComments = []
-    for (const comment of node.leadingComments) {
+    for (const comment of leadingComments) {
       if (lastComment && lastComment.loc.end.line === comment.loc.start.line - 1) {
         lastComment.value += '\n' + comment.value.trim()
         lastComment.loc.end = comment.loc.end
@@ -160,6 +187,20 @@ class Generator {
     }
 
     return ensureAPIStatusTag(lastComment.value)
+  }
+
+  getLeadingComments () {
+    let start = last(this.nodeStack).loc.start
+    for (let i = this.nodeStack.length - 1; i >= 0; i--) {
+      let node = this.nodeStack[i]
+      if (node.loc.start.line < start.line || node.loc.start.column < start.column) {
+        break
+      }
+      if (node.leadingComments) {
+        return node.leadingComments
+      }
+    }
+    return null
   }
 
   expandObject (object, newLocation) {

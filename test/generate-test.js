@@ -163,6 +163,34 @@ describe('generate(code)', function () {
     assert.equal(donnaResult.exports.hello, 1)
   })
 
+  it('handles default-exported classes', function () {
+    const donnaResult = runDonna(dedent`
+      # A useful class
+      module.exports = class Person
+        constructor: ->
+    `)
+
+    const es6Result = generate(dedent`
+      // A useful class
+      module.exports = class Person {
+        constructor () {}
+      }
+    `)
+
+    const es7Result = generate(dedent`
+      // A useful class
+      export default class Person {
+        constructor () {}
+      }
+    `)
+
+    assertMatchingObjects(es6Result, donnaResult, [1, 17], [1, 17])
+    assertMatchingObjects(es7Result, donnaResult, [1, 15], [1, 17])
+    assert.equal(es6Result.exports, 1)
+    assert.equal(es7Result.exports, 1)
+    assert.equal(donnaResult.exports, 1)
+  })
+
   it('handles static methods', function () {
     const donnaResult = runDonna(dedent`
       # A useful class
