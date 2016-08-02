@@ -3,17 +3,19 @@
 const fs = require('fs')
 const path = require('path')
 const generate = require('./generate')
-const findSources = require('./find-sources')
 
-function run (directory) {
+function run (filePaths) {
   const result = {files: {}}
-  for (let filepath of findSources(directory)) {
-    result.files[path.relative(directory, filepath)] = generate(fs.readFileSync(filepath, 'utf8'))
+  for (let filePath of filePaths) {
+    const absoluteFilePath = path.isAbsolute(filePath)
+      ? filePath
+      : path.join(process.cwd(), filePath)
+    const code = fs.readFileSync(absoluteFilePath, 'utf8')
+    result.files[filePath] = generate(code)
   }
   return result
 }
 
 run.generate = generate
-run.findSources = findSources
 
 module.exports = run
