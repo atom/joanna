@@ -60,10 +60,12 @@ class Generator {
 
   visitExportNamedDeclaration (node) {
     const declaredObject = this.visit(node.declaration)
-    this.expandObject(declaredObject, node.loc)
-    declaredObject.doc = this.getDocumentation()
-    declaredObject.bindingType = 'exportsProperty'
-    this.exports[declaredObject.name] = declaredObject.range[0][0]
+    if (declaredObject) {
+      this.expandObject(declaredObject, node.loc)
+      declaredObject.doc = this.getDocumentation()
+      declaredObject.bindingType = 'exportsProperty'
+      this.exports[declaredObject.name] = declaredObject.range[0][0]
+    }
   }
 
   visitAssignmentExpression (node) {

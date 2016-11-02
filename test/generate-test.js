@@ -279,6 +279,16 @@ describe('generate(code)', function () {
 
     assertMatchingObjects(result, donnaResult, [1, 0], [1, 0])
   })
+
+  it('does not blow up for exported variables', function () {
+    generate(dedent`
+      // A very important variable
+      export let foo = 5;
+
+      // A less important variable
+      export const bar = 6;
+    `)
+  })
 })
 
 function assertMatchingObjects (actualMetadata, expectedMetadata,actualPosition, expectedPosition) {
