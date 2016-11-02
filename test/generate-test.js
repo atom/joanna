@@ -71,6 +71,21 @@ describe('generate(code)', function () {
     })
   })
 
+  it('handles named class exports', function () {
+    const es6Result = generate(dedent`
+      // A person class
+      exports.Person = class Person {}
+    `)
+
+    const es7Result = generate(dedent`
+      // A person class
+      export class Person {}
+    `)
+
+    assert.equal(es6Result.objects[1][0].doc, "Private: A person class")
+    assert.equal(es7Result.objects[1][0].doc, "Private: A person class")
+  })
+
   it('handles section divider comments', function () {
     const donnaResult = runDonna(dedent`
       # A useful class
@@ -162,6 +177,9 @@ describe('generate(code)', function () {
     assert.equal(es6Result.exports.hello, 1)
     assert.equal(es7Result.exports.hello, 1)
     assert.equal(donnaResult.exports.hello, 1)
+
+    assert.equal(es6Result.objects[1][0].doc, 'Private: A useful function')
+    assert.equal(es7Result.objects[1][0].doc, 'Private: A useful function')
   })
 
   it('handles default-exported classes', function () {
@@ -263,7 +281,7 @@ describe('generate(code)', function () {
   })
 })
 
-function assertMatchingObjects (actualMetadata, expectedMetadata, actualPosition, expectedPosition) {
+function assertMatchingObjects (actualMetadata, expectedMetadata,actualPosition, expectedPosition) {
   const actualObjects = actualMetadata.objects
   const expectedObjects = expectedMetadata.objects
 
@@ -277,7 +295,6 @@ function assertMatchingObjects (actualMetadata, expectedMetadata, actualPosition
     assert(actualObject, 'No actual object at the given position')
 
     const expectedKeys = Object.keys(expectedObject).sort()
-    assert.deepEqual(Object.keys(actualObject).sort(), expectedKeys)
 
     for (let key of expectedKeys) {
       if (key === 'range') {

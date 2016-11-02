@@ -61,12 +61,9 @@ class Generator {
   visitExportNamedDeclaration (node) {
     const declaredObject = this.visit(node.declaration)
     this.expandObject(declaredObject, node.loc)
+    declaredObject.doc = this.getDocumentation()
     declaredObject.bindingType = 'exportsProperty'
     this.exports[declaredObject.name] = declaredObject.range[0][0]
-
-    // Match donna's more minimal format for exported functions
-    delete declaredObject.doc
-    delete declaredObject.paramNames
   }
 
   visitAssignmentExpression (node) {
@@ -78,12 +75,9 @@ class Generator {
             const rightObject = this.visit(node.right)
             if (rightObject) {
               this.expandObject(rightObject, node.loc)
+              rightObject.doc = this.getDocumentation()
               rightObject.bindingType = 'exportsProperty'
               this.exports[rightObject.name] = rightObject.range[0][0]
-
-              // Match donna's more minimal format for exported functions
-              delete rightObject.doc
-              delete rightObject.paramNames
             }
             break
           }
