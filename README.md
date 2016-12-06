@@ -19,3 +19,9 @@ From the command line:
 ```sh
 $ joanna src/*.js
 ```
+
+Or:
+
+```sh
+$ joanna-tello package.json src/*.js
+```
