@@ -168,11 +168,11 @@ class Generator {
     let groupedComments = []
     for (const comment of leadingComments) {
       if (lastComment && lastComment.loc.end.line === comment.loc.start.line - 1) {
-        lastComment.value += '\n' + comment.value.trim()
+        lastComment.value += '\n' + comment.value.replace(/^\s/, '')
         lastComment.loc.end = comment.loc.end
       } else {
         lastComment = {
-          value: comment.value.trim(),
+          value: comment.value.replace(/^\s/, ''),
           loc: comment.loc
         }
         groupedComments.push(lastComment)
