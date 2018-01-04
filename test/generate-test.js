@@ -134,6 +134,27 @@ describe('generate(code)', function () {
     assertMatchingObjects(result, donnaResult, [10, 2], [9, 2])
   })
 
+  it('handles section divider immediately followed by methods', function () {
+    const result = generate(dedent`
+      // A useful class
+      class Person {
+        /*
+        Section: construction
+        */
+
+        constructor (name) {
+          this.name = name
+        }
+      }
+    `)
+
+    assert.deepEqual(result.objects[2][2], {
+      type: 'comment',
+      doc: 'Section: construction',
+      range: [[2, 2], [4, 4]]
+    })
+  })
+
   it('handles top-level functions', function () {
     const donnaResult = runDonna(dedent`
       # A useful function

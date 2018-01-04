@@ -176,12 +176,20 @@ class Generator {
   }
 
   getDocumentation () {
-    const leadingComments = this.getLeadingComments()
-    if (!leadingComments) {
-      return
-    }
+    const {start} = last(this.nodeStack).loc
 
-    let lastComment = null
+    let leadingComments
+    for (let i = this.nodeStack.length - 1; i >= 0; i--) {
+      const node = this.nodeStack[i]
+      if (node.loc.start.line < start.line || node.loc.start.column < start.column) break
+      if (node.leadingComments) {
+        leadingComments = node.leadingComments
+        break
+      }
+    }
+    if (!leadingComments) return
+
+    let lastComment
     let groupedComments = []
     for (const comment of leadingComments) {
       if (lastComment && lastComment.loc.end.line === comment.loc.start.line - 1) {
@@ -196,16 +204,22 @@ class Generator {
       }
     }
 
+    // If there is a comment right before the node, return its content as
+    // the documentation for that node.
+    let result
+    if (lastComment.loc.end.line === start.line - 1) {
+      result = ensureAPIStatusTag(groupedComments.pop().value)
+    }
+
     // Add any previous comments as separate top-level items
-    groupedComments.pop()
     for (const comment of groupedComments) {
       this.addObject(comment.loc, {
         type: 'comment',
-        doc: comment.value
+        doc: comment.value.trim()
       })
     }
 
-    return ensureAPIStatusTag(lastComment.value)
+    return result
   }
 
   getLeadingComments () {
