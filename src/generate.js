@@ -69,12 +69,13 @@ class Generator {
   }
 
   visitAssignmentExpression (node) {
-    const left = node.left
+    const {left, right} = node
     if (left.type === 'MemberExpression') {
-      if (left.object.type === 'Identifier') {
-        switch (left.object.name) {
+      const {object, property} = left
+      if (object.type === 'Identifier') {
+        switch (object.name) {
           case 'exports': {
-            const rightObject = this.visit(node.right)
+            const rightObject = this.visit(right)
             if (rightObject) {
               this.expandObject(rightObject, node.loc)
               rightObject.doc = this.getDocumentation()
@@ -85,7 +86,7 @@ class Generator {
           }
 
           case 'module': {
-            const rightObject = this.visit(node.right)
+            const rightObject = this.visit(right)
             if (rightObject) {
               rightObject.bindingType = 'exports'
               rightObject.doc = this.getDocumentation()
@@ -93,6 +94,18 @@ class Generator {
             }
             break
           }
+        }
+      } else if (object.type === 'ThisExpression' && property.type === 'Identifier') {
+        const doc = this.getDocumentation()
+        if (doc && !doc.startsWith('Private:')) {
+          const currentClass = last(this.classStack)
+          const instanceProperty = this.addObject(node.loc, {
+            name: property.name,
+            type: 'primitive',
+            bindingType: 'prototypeProperty',
+            doc
+          })
+          currentClass.prototypeProperties.push(instanceProperty.range[0])
         }
       }
     }
@@ -130,6 +143,10 @@ class Generator {
       currentClass.prototypeProperties.push(currentMethod.range[0])
     }
 
+    if (node.key.name === 'constructor') {
+      this.visit(node.body)
+    }
+
     return currentMethod
   }
 
@@ -159,12 +176,20 @@ class Generator {
   }
 
   getDocumentation () {
-    const leadingComments = this.getLeadingComments()
-    if (!leadingComments) {
-      return
-    }
+    const {start} = last(this.nodeStack).loc
 
-    let lastComment = null
+    let leadingComments
+    for (let i = this.nodeStack.length - 1; i >= 0; i--) {
+      const node = this.nodeStack[i]
+      if (node.loc.start.line < start.line || node.loc.start.column < start.column) break
+      if (node.leadingComments) {
+        leadingComments = node.leadingComments
+        break
+      }
+    }
+    if (!leadingComments) return
+
+    let lastComment
     let groupedComments = []
     for (const comment of leadingComments) {
       if (lastComment && lastComment.loc.end.line === comment.loc.start.line - 1) {
@@ -179,16 +204,22 @@ class Generator {
       }
     }
 
+    // If there is a comment right before the node, return its content as
+    // the documentation for that node.
+    let result
+    if (lastComment.loc.end.line === start.line - 1) {
+      result = ensureAPIStatusTag(groupedComments.pop().value)
+    }
+
     // Add any previous comments as separate top-level items
-    groupedComments.pop()
     for (const comment of groupedComments) {
       this.addObject(comment.loc, {
         type: 'comment',
-        doc: comment.value
+        doc: comment.value.trim()
       })
     }
 
-    return ensureAPIStatusTag(lastComment.value)
+    return result
   }
 
   getLeadingComments () {
