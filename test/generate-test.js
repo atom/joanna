@@ -235,6 +235,56 @@ describe('generate(code)', function () {
     assertMatchingObjects(result, donnaResult, [4, 2], [4, 10])
   })
 
+  it('handles public instance properties', function () {
+    const result = generate(dedent`
+      // Public: A useful class
+      class Thing {
+        constructor (params) {
+
+          // Public: An instance of A
+          this.a = params.a || new A()
+
+          if (params.b) {
+
+            // Public: An instance of B
+            this.b = params.b || new B()
+          }
+        }
+      }
+    `)
+
+    assert.deepEqual(result.objects['1']['0'], {
+      type: 'class',
+      name: 'Thing',
+      superClass: null,
+      doc: 'Public: A useful class',
+      range: [[1, 0], [13, 1]],
+      bindingType: undefined,
+      classProperties: [],
+      prototypeProperties: [
+        [2, 2],
+        [5, 4],
+        [10, 6]
+      ]
+    })
+
+    assert.deepEqual(result.objects['5']['4'], {
+      name: 'a',
+      doc: 'Public: An instance of A',
+      range: [[5, 4], [5, 32]],
+      bindingType: 'prototypeProperty',
+      type: 'primitive'
+    })
+
+    assert.deepEqual(result.objects['10']['6'], {
+      name: 'b',
+      doc: 'Public: An instance of B',
+      range: [[10, 6], [10, 34]],
+      bindingType: 'prototypeProperty',
+      type: 'primitive'
+    })
+  })
+
   it('handles the various visibility levels of APIs', function () {
     const donnaResult = runDonna(dedent`
       # Public: a thing

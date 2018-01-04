@@ -69,12 +69,13 @@ class Generator {
   }
 
   visitAssignmentExpression (node) {
-    const left = node.left
+    const {left, right} = node
     if (left.type === 'MemberExpression') {
-      if (left.object.type === 'Identifier') {
-        switch (left.object.name) {
+      const {object, property} = left
+      if (object.type === 'Identifier') {
+        switch (object.name) {
           case 'exports': {
-            const rightObject = this.visit(node.right)
+            const rightObject = this.visit(right)
             if (rightObject) {
               this.expandObject(rightObject, node.loc)
               rightObject.doc = this.getDocumentation()
@@ -85,7 +86,7 @@ class Generator {
           }
 
           case 'module': {
-            const rightObject = this.visit(node.right)
+            const rightObject = this.visit(right)
             if (rightObject) {
               rightObject.bindingType = 'exports'
               rightObject.doc = this.getDocumentation()
@@ -93,6 +94,18 @@ class Generator {
             }
             break
           }
+        }
+      } else if (object.type === 'ThisExpression' && property.type === 'Identifier') {
+        const doc = this.getDocumentation()
+        if (doc && !doc.startsWith('Private:')) {
+          const currentClass = last(this.classStack)
+          const instanceProperty = this.addObject(node.loc, {
+            name: property.name,
+            type: 'primitive',
+            bindingType: 'prototypeProperty',
+            doc
+          })
+          currentClass.prototypeProperties.push(instanceProperty.range[0])
         }
       }
     }
@@ -128,6 +141,10 @@ class Generator {
     } else {
       currentMethod.bindingType = 'prototypeProperty'
       currentClass.prototypeProperties.push(currentMethod.range[0])
+    }
+
+    if (node.key.name === 'constructor') {
+      this.visit(node.body)
     }
 
     return currentMethod
