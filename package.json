@@ -18,7 +18,7 @@
   "license": "MIT",
   "dependencies": {
     "babylon": "^6.8.4",
-    "tello": "^1.0.6",
+    "tello": "^1.1.0",
     "walkdir": ">= 0.0.2",
     "yargs-parser": "^11.1.0"
   },
