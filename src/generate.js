@@ -8,7 +8,7 @@ module.exports = function generate (code) {
 
 const BABYLON_OPTIONS = {
   sourceType: 'module',
-  plugins: ['asyncFunctions', 'jsx']
+  plugins: ['asyncFunctions', 'jsx', 'flow', 'classProperties', 'classPrivateProperties', 'classPrivateMethods', 'dynamicImport', 'exportDefaultFrom', 'nullishCoalescingOperator', 'objectRestSpread', 'optionalChaining', ]
 }
 
 const API_STATUS_REGEX = /^(Private|Public|Essential|Extended|Section):/
