@@ -20,7 +20,7 @@
     "@babel/parser": "^7.12.3",
     "tello": "^1.2.0",
     "walkdir": ">=0.4.1",
-    "yargs-parser": "^11.1.0"
+    "yargs-parser": "^11.1.1"
   },
   "devDependencies": {
     "chai": "^3.5.0",
