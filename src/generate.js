@@ -1,6 +1,6 @@
 'use strict'
 
-const babylon = require('babylon')
+const babylon = require('@babel/parser')
 
 module.exports = function generate (code) {
   return new Generator(code).generate()
