@@ -31,6 +31,9 @@ class Generator {
   }
 
   visit (node) {
+    if (node == null) {
+      return
+    }
     this.nodeStack.push(node)
     try {
       switch (node.type) {
