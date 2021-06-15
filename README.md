@@ -1,4 +1,6 @@
-# joanna [![Build Status](https://travis-ci.org/atom/joanna.svg?branch=master)](https://travis-ci.org/atom/joanna)
+# Joanna
+
+[![CI](https://github.com/atom/joanna/actions/workflows/ci.yml/badge.svg)](https://github.com/atom/joanna/actions/workflows/ci.yml)
 
 This is the JavaScript counterpart of [donna](https://github.com/atom/donna).
 
